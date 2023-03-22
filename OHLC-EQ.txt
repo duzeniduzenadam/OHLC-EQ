@@ -1,0 +1,58 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © 0xdd11a
+
+//@version=5
+
+indicator('OHLCEQ', overlay=true)
+
+// Inputs
+
+timeFrame = input.timeframe('60')
+displayHL = input(true, 'Display High & Low?')
+displayOC = input(true, 'Display Open & Close?')
+showCandle = input(true, 'Show Candle')
+
+// FUNCTIONS
+
+t = time(timeFrame)
+
+isNewbar = not na(t) and (na(t[1]) or t > t[1])
+
+tfInMinutes(simple string tf = "") =>
+    float chartTf =
+      timeframe.multiplier * (
+      timeframe.isseconds ? 1. / 60             :
+      timeframe.isminutes ? 1.                  :
+      timeframe.isdaily   ? 60. * 24            :
+      timeframe.isweekly  ? 60. * 24 * 7        :
+      timeframe.ismonthly ? 60. * 24 * 30.4375  : na)
+    float result = tf == "" ? chartTf : request.security(syminfo.tickerid, tf, chartTf)
+
+inTimeframe = tfInMinutes(timeFrame) > tfInMinutes(timeframe.period)
+
+// Range
+
+reso(exp, res) => request.security(syminfo.tickerid, res, exp, lookahead=barmerge.lookahead_on)
+ 
+o = reso(open[1], timeFrame)
+h = reso(high[1], timeFrame)
+l = reso(low[1], timeFrame)
+c = reso(close[1], timeFrame)
+
+// Plot Candle
+
+plotcandle(inTimeframe and showCandle and isNewbar ? o : na, h, l, c, color=c >= o ? color.lime : color.red)
+
+
+// Add this line to define the midpoint variable
+
+mid = (h + l) / 2
+
+
+// Plot Range
+
+plot(inTimeframe and displayOC ? o : na, title = "Open", color = o != o[1] ? na : #5d606b, linewidth = 2, style = plot.style_linebr, transp = 50)
+plot(inTimeframe and displayOC ? c : na, title = "Close", color = c != c[1] ? na : #5d606b, linewidth = 2, style = plot.style_linebr, transp = 50)
+plot(inTimeframe and displayHL ? h : na, title = "High", color = h != h[1] ? na : #FF5252, linewidth = 2, style = plot.style_linebr, transp = 50)
+plot(inTimeframe and displayHL ? l : na, title = "Low", color = l != l[1] ? na : #00E676, linewidth = 2, style = plot.style_linebr, transp = 50)
+plot(inTimeframe and displayHL ? mid : na, title = "Midpoint", color = l != l[1] ? na : #3d3d3d, linewidth = 2, style = plot.style_linebr, transp = 50)
